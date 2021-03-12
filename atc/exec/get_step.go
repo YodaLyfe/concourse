@@ -15,7 +15,7 @@ import (
 	"github.com/concourse/concourse/atc/metric"
 	"github.com/concourse/concourse/atc/resource"
 	"github.com/concourse/concourse/atc/runtime"
-	"github.com/concourse/concourse/atc/worker"
+	worker "github.com/concourse/concourse/atc/worker2"
 	"github.com/concourse/concourse/tracing"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -45,20 +45,20 @@ type GetDelegateFactory interface {
 type GetDelegate interface {
 	StartSpan(context.Context, string, tracing.Attrs) (context.Context, trace.Span)
 
-	FetchImage(context.Context, atc.ImageResource, atc.VersionedResourceTypes, bool) (worker.ImageSpec, error)
+	FetchImage(context.Context, atc.ImageResource, atc.VersionedResourceTypes, bool) (runtime.ImageSpec, error)
 
 	Stdout() io.Writer
 	Stderr() io.Writer
 
 	Initializing(lager.Logger)
 	Starting(lager.Logger)
-	Finished(lager.Logger, ExitStatus, runtime.VersionResult)
+	Finished(lager.Logger, ExitStatus, resource.VersionResult)
 	Errored(lager.Logger, string)
 
 	WaitingForWorker(lager.Logger)
 	SelectedWorker(lager.Logger, string)
 
-	UpdateVersion(lager.Logger, atc.GetPlan, runtime.VersionResult)
+	UpdateVersion(lager.Logger, atc.GetPlan, resource.VersionResult)
 }
 
 // GetStep will fetch a version of a resource on a worker that supports the
@@ -68,10 +68,10 @@ type GetStep struct {
 	plan                 atc.GetPlan
 	metadata             StepMetadata
 	containerMetadata    db.ContainerMetadata
-	resourceFactory      resource.ResourceFactory
 	resourceCacheFactory db.ResourceCacheFactory
-	strategy             worker.ContainerPlacementStrategy
-	workerPool           worker.Pool
+	strategy             worker.PlacementStrategy
+	workerPool           Pool
+	resourceGetter       resource.Getter
 	delegateFactory      GetDelegateFactory
 }
 
@@ -80,20 +80,20 @@ func NewGetStep(
 	plan atc.GetPlan,
 	metadata StepMetadata,
 	containerMetadata db.ContainerMetadata,
-	resourceFactory resource.ResourceFactory,
+	resourceGetter resource.Getter,
 	resourceCacheFactory db.ResourceCacheFactory,
-	strategy worker.ContainerPlacementStrategy,
+	strategy worker.PlacementStrategy,
 	delegateFactory GetDelegateFactory,
-	pool worker.Pool,
+	pool Pool,
 ) Step {
 	return &GetStep{
 		planID:               planID,
 		plan:                 plan,
 		metadata:             metadata,
 		containerMetadata:    containerMetadata,
-		resourceFactory:      resourceFactory,
 		resourceCacheFactory: resourceCacheFactory,
 		strategy:             strategy,
+		resourceGetter:       resourceGetter,
 		delegateFactory:      delegateFactory,
 		workerPool:           pool,
 	}
@@ -130,13 +130,13 @@ func (step *GetStep) run(ctx context.Context, state RunState, delegate GetDelega
 		return false, err
 	}
 
-	workerSpec := worker.WorkerSpec{
+	workerSpec := worker.Spec{
 		Tags:         step.plan.Tags,
 		TeamID:       step.metadata.TeamID,
 		ResourceType: step.plan.VersionedResourceTypes.Base(step.plan.Type),
 	}
 
-	var imageSpec worker.ImageSpec
+	var imageSpec runtime.ImageSpec
 	resourceType, found := step.plan.VersionedResourceTypes.Lookup(step.plan.Type)
 	if found {
 		image := atc.ImageResource{
@@ -172,12 +172,18 @@ func (step *GetStep) run(ctx context.Context, state RunState, delegate GetDelega
 		return false, err
 	}
 
-	containerSpec := worker.ContainerSpec{
-		ImageSpec: imageSpec,
-		TeamID:    step.metadata.TeamID,
-		Type:      step.containerMetadata.Type,
+	containerSpec := runtime.ContainerSpec{
+		TeamID: step.metadata.TeamID,
+		JobID:  step.metadata.JobID,
 
-		Env: step.metadata.Env(),
+		ImageSpec: imageSpec,
+
+		Env:  step.metadata.Env(),
+		Type: db.ContainerTypeGet,
+
+		Dir: step.containerMetadata.WorkingDirectory,
+
+		CertsBindMount: true,
 	}
 	tracing.Inject(ctx, &containerSpec)
 
@@ -197,6 +203,7 @@ func (step *GetStep) run(ctx context.Context, state RunState, delegate GetDelega
 	// Only get from local cache if caching streamed volumes is enabled -
 	// otherwise, we'd need to stream volumes between workers much more
 	// frequently.
+	// TODO: need to update this when we re-implement streamed volume caching
 	if atc.EnableCacheStreamedVolumes {
 		getResult, found, err := step.getFromLocalCache(logger, step.metadata.TeamID, resourceCache, workerSpec)
 		if err != nil {
@@ -230,29 +237,9 @@ func (step *GetStep) run(ctx context.Context, state RunState, delegate GetDelega
 		}
 	}
 
-	processSpec := runtime.ProcessSpec{
-		Path:         "/opt/resource/in",
-		Args:         []string{resource.ResourcesDir("get")},
-		StdoutWriter: delegate.Stdout(),
-		StderrWriter: delegate.Stderr(),
-	}
-
-	resourceToGet := step.resourceFactory.NewResource(
-		source,
-		params,
-		version,
-	)
-
 	containerOwner := db.NewBuildStepContainerOwner(step.metadata.BuildID, step.planID, step.metadata.TeamID)
 
-	worker, _, err := step.workerPool.SelectWorker(
-		lagerctx.NewContext(ctx, logger),
-		containerOwner,
-		containerSpec,
-		workerSpec,
-		step.strategy,
-		delegate,
-	)
+	worker, err := step.workerPool.FindOrSelectWorker(ctx, containerOwner, containerSpec, workerSpec, step.strategy, delegate)
 	if err != nil {
 		return false, err
 	}
@@ -261,7 +248,7 @@ func (step *GetStep) run(ctx context.Context, state RunState, delegate GetDelega
 
 	defer func() {
 		step.workerPool.ReleaseWorker(
-			lagerctx.NewContext(ctx, logger),
+			logger,
 			containerSpec,
 			worker,
 			step.strategy,
@@ -272,18 +259,24 @@ func (step *GetStep) run(ctx context.Context, state RunState, delegate GetDelega
 	if err != nil {
 		return false, err
 	}
+	processCtx = lagerctx.NewContext(processCtx, logger)
 
 	defer cancel()
 
-	getResult, err := worker.RunGetStep(
-		lagerctx.NewContext(processCtx, logger),
-		containerOwner,
-		containerSpec,
-		step.containerMetadata,
-		processSpec,
-		delegate,
+	delegate.Starting(logger)
+	versionResult, processResult, volume, err := step.resourceGetter.Get(
+		ctx,
+		worker,
+		func(ctx context.Context) (runtime.Container, []runtime.VolumeMount, error) {
+			return worker.FindOrCreateContainer(processCtx, containerOwner, step.containerMetadata, containerSpec)
+		},
+		resource.Resource{
+			Source:  source,
+			Params:  params,
+			Version: version,
+		},
 		resourceCache,
-		resourceToGet,
+		delegate.Stderr(),
 	)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
@@ -295,16 +288,16 @@ func (step *GetStep) run(ctx context.Context, state RunState, delegate GetDelega
 	}
 
 	var succeeded bool
-	if getResult.ExitStatus == 0 {
+	if processResult.ExitStatus == 0 {
 		state.StoreResult(step.planID, resourceCache)
 
 		state.ArtifactRepository().RegisterArtifact(
 			build.ArtifactName(step.plan.Name),
-			getResult.GetArtifact,
+			volume,
 		)
 
 		if step.plan.Resource != "" {
-			delegate.UpdateVersion(logger, step.plan, getResult.VersionResult)
+			delegate.UpdateVersion(logger, step.plan, versionResult)
 		}
 
 		succeeded = true
@@ -312,8 +305,8 @@ func (step *GetStep) run(ctx context.Context, state RunState, delegate GetDelega
 
 	delegate.Finished(
 		logger,
-		ExitStatus(getResult.ExitStatus),
-		getResult.VersionResult,
+		ExitStatus(processResult.ExitStatus),
+		versionResult,
 	)
 
 	return succeeded, nil
@@ -323,7 +316,8 @@ func (step *GetStep) getFromLocalCache(
 	logger lager.Logger,
 	teamId int,
 	resourceCache db.UsedResourceCache,
-	workerSpec worker.WorkerSpec) (worker.GetResult, bool, error) {
+	workerSpec worker.Spec,
+) (worker.GetResult, bool, error) {
 	volume, found := step.findResourceCache(logger, teamId, resourceCache, workerSpec)
 	if !found {
 		return worker.GetResult{}, false, nil
