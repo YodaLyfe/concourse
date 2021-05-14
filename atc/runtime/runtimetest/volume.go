@@ -58,7 +58,7 @@ func (v Volume) StreamOut(ctx context.Context, path string, compression compress
 	return v.Content.StreamOut(ctx, path, compression.Encoding())
 }
 
-func (v *Volume) InitializeResourceCache(_ lager.Logger, _ db.UsedResourceCache) error {
+func (v *Volume) InitializeResourceCache(_ lager.Logger, _ db.UsedResourceCache, _ string) error {
 	v.ResourceCacheInitialized = true
 	return nil
 }

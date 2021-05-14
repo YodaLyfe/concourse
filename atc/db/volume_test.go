@@ -228,7 +228,7 @@ var _ = Describe("Volume", func() {
 			createdVolume, err = resourceCacheVolume.Created()
 			Expect(err).ToNot(HaveOccurred())
 
-			err = createdVolume.InitializeResourceCache(resourceCache)
+			err = createdVolume.InitializeResourceCache(resourceCache, createdVolume.WorkerName())
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -263,7 +263,7 @@ var _ = Describe("Volume", func() {
 					createdVolume, err = resourceCacheVolume.Created()
 					Expect(err).ToNot(HaveOccurred())
 
-					err = createdVolume.InitializeResourceCache(resourceCache)
+					err = createdVolume.InitializeResourceCache(resourceCache, createdVolume.WorkerName())
 					Expect(err).ToNot(HaveOccurred())
 
 					Expect(createdVolume.Type()).To(Equal(db.VolumeTypeContainer))
@@ -285,7 +285,7 @@ var _ = Describe("Volume", func() {
 				createdVolume, err = resourceCacheVolume.Created()
 				Expect(err).ToNot(HaveOccurred())
 
-				err = createdVolume.InitializeStreamedResourceCache(resourceCache, otherWorker.Name())
+				err = createdVolume.InitializeResourceCache(resourceCache, otherWorker.Name())
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(createdVolume.Type()).To(Equal(db.VolumeTypeContainer))
@@ -308,7 +308,7 @@ var _ = Describe("Volume", func() {
 				streamedVolume1, err = streamedResourceCacheVolume.Created()
 				Expect(err).ToNot(HaveOccurred())
 
-				err = streamedVolume1.InitializeStreamedResourceCache(resourceCache, defaultWorker.Name())
+				err = streamedVolume1.InitializeResourceCache(resourceCache, defaultWorker.Name())
 				Expect(err).ToNot(HaveOccurred())
 			})
 
@@ -362,7 +362,7 @@ var _ = Describe("Volume", func() {
 					createdVolume, err := resourceCacheVolume.Created()
 					Expect(err).ToNot(HaveOccurred())
 
-					err = createdVolume.InitializeResourceCache(resourceCache)
+					err = createdVolume.InitializeResourceCache(resourceCache, createdVolume.WorkerName())
 					Expect(err).ToNot(HaveOccurred())
 
 					creatingContainer, err = otherWorker.CreateContainer(db.NewBuildStepContainerOwner(build.ID(), "some-plan", defaultTeam.ID()), db.ContainerMetadata{
@@ -377,7 +377,7 @@ var _ = Describe("Volume", func() {
 					streamedVolume2, err = streamedResourceCacheVolume.Created()
 					Expect(err).ToNot(HaveOccurred())
 
-					err = streamedVolume2.InitializeStreamedResourceCache(resourceCache, thirdWorker.Name())
+					err = streamedVolume2.InitializeResourceCache(resourceCache, thirdWorker.Name())
 					Expect(err).ToNot(HaveOccurred())
 				})
 
@@ -606,7 +606,7 @@ var _ = Describe("Volume", func() {
 
 			Expect(createdVolume.Type()).To(Equal(db.VolumeType(db.VolumeTypeContainer)))
 
-			err = createdVolume.InitializeResourceCache(resourceCache)
+			err = createdVolume.InitializeResourceCache(resourceCache, createdVolume.WorkerName())
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(createdVolume.Type()).To(Equal(db.VolumeType(db.VolumeTypeResource)))
@@ -731,7 +731,7 @@ var _ = Describe("Volume", func() {
 			parentVolume, err = creatingParentVolume.Created()
 			Expect(err).ToNot(HaveOccurred())
 
-			err = parentVolume.InitializeResourceCache(usedResourceCache)
+			err = parentVolume.InitializeResourceCache(usedResourceCache, parentVolume.WorkerName())
 			Expect(err).ToNot(HaveOccurred())
 		})
 

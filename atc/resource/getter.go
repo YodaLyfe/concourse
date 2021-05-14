@@ -188,7 +188,7 @@ func (g Getter) getAndCreateCache(
 
 	volume = resourceMountVolume(mounts)
 
-	if err := volume.InitializeResourceCache(logger, resourceCache); err != nil {
+	if err := volume.InitializeResourceCache(logger, resourceCache, worker.Name()); err != nil {
 		return VersionResult{}, runtime.ProcessResult{}, nil, err
 	}
 

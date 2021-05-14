@@ -157,8 +157,7 @@ type CreatedVolume interface {
 	Destroying() (DestroyingVolume, error)
 	WorkerName() string
 
-	InitializeResourceCache(UsedResourceCache) error
-	InitializeStreamedResourceCache(UsedResourceCache, string) error
+	InitializeResourceCache(UsedResourceCache, string) error
 	GetResourceCacheID() int
 	InitializeArtifact(name string, buildID int) (WorkerArtifact, error)
 	InitializeTaskCache(jobID int, stepName string, path string) error
@@ -359,18 +358,11 @@ func (volume *createdVolume) findWorkerBaseResourceTypeByBaseResourceTypeID(base
 	}, nil
 }
 
-func (volume *createdVolume) InitializeResourceCache(resourceCache UsedResourceCache) error {
-	return volume.initializeResourceCache(resourceCache, volume.workerName)
-}
-
-func (volume *createdVolume) InitializeStreamedResourceCache(resourceCache UsedResourceCache, sourceWorkerName string) error {
-	return volume.initializeResourceCache(resourceCache, sourceWorkerName)
-}
-
-// initializeResourceCache creates a worker resource cache and point current volume's
-// worker_resource_cache_id to the cache. When initializing a local generated resource
-// cache, then source worker is just the volume's worker.
-func (volume *createdVolume) initializeResourceCache(resourceCache UsedResourceCache, sourceWorkerName string) error {
+// InitializeResourceCache creates a worker resource cache and points the
+// current volume's worker_resource_cache_id to the cache. sourceWorkerName
+// refers to the worker that produced the resource cache volume - if
+// initializing from a locally run get step, it will match the volume's worker.
+func (volume *createdVolume) InitializeResourceCache(resourceCache UsedResourceCache, sourceWorkerName string) error {
 	tx, err := volume.conn.Begin()
 	if err != nil {
 		return err

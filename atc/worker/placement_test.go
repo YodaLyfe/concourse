@@ -119,11 +119,11 @@ var _ = Describe("Container Placement Strategies", func() {
 				),
 			)
 			resourceCache1 := scenario.FindOrCreateResourceCache("worker1", "container1")
-			err := scenario.WorkerVolume("worker1", "cache-input2").InitializeResourceCache(logger, resourceCache1)
+			err := scenario.WorkerVolume("worker1", "cache-input2").InitializeResourceCache(logger, resourceCache1, "worker1")
 			Expect(err).ToNot(HaveOccurred())
 
 			resourceCache2 := scenario.FindOrCreateResourceCache("worker2", "container2")
-			err = scenario.WorkerVolume("worker2", "input2").InitializeResourceCache(logger, resourceCache2)
+			err = scenario.WorkerVolume("worker2", "input2").InitializeResourceCache(logger, resourceCache2, "worker2")
 			Expect(err).ToNot(HaveOccurred())
 
 			workers, err := volumeLocalityStrategy().Order(logger, scenario.Pool, scenario.DB.Workers, runtime.ContainerSpec{
