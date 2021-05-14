@@ -1001,11 +1001,6 @@ func (r *resource) getCausalityResourceVersions(buildIDs []int, root *atc.Causal
 	// pre-populate the list with the root
 	resourceVersions[root.ResourceVersionID] = root
 
-	var (
-		rID, rcvID, bID   int
-		rName, versionStr string
-		version           atc.Version
-	)
 	// go through all the inputs and construct the struct. By filling in the
 	// `InputTo` field, this will partially construct the tree
 	rows, err = psql.Select("r.id", "rcv.id", "r.name", "rcv.version", "i.build_id").
@@ -1020,6 +1015,11 @@ func (r *resource) getCausalityResourceVersions(buildIDs []int, root *atc.Causal
 	}
 
 	for rows.Next() {
+		var (
+			rID, rcvID, bID   int
+			rName, versionStr string
+			version           atc.Version
+		)
 		rows.Scan(&rID, &rcvID, &rName, &versionStr, &bID)
 		err = json.Unmarshal([]byte(versionStr), &version)
 		if err != nil {
@@ -1052,6 +1052,11 @@ func (r *resource) getCausalityResourceVersions(buildIDs []int, root *atc.Causal
 	}
 
 	for rows.Next() {
+		var (
+			rID, rcvID, bID   int
+			rName, versionStr string
+			version           atc.Version
+		)
 		rows.Scan(&rID, &rcvID, &rName, &versionStr, &bID)
 		err = json.Unmarshal([]byte(versionStr), &version)
 
