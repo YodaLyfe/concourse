@@ -196,10 +196,6 @@ func (r *resource) Reload() (bool, error) {
 	return true, nil
 }
 
-func (r *resource) SetResourceConfig(atc.Source, atc.VersionedResourceTypes) (ResourceConfigScope, error) {
-	return nil, fmt.Errorf("not implemented")
-}
-
 func (r *resource) SetResourceConfigScope(scope ResourceConfigScope) error {
 	tx, err := r.conn.Begin()
 	if err != nil {
