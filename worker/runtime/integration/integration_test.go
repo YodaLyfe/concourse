@@ -291,6 +291,65 @@ func (s *IntegrationSuite) TestContainerNetworkEgressWithRestrictedNetworks() {
 	s.Contains(buf.String(), "connect: connection refused")
 }
 
+func (s *IntegrationSuite) TestContainerNetworkHosts() {
+	namespace := "test-restricted-networks"
+	requestTimeout := 3 * time.Second
+
+	network, err := runtime.NewCNINetwork()
+
+	s.NoError(err)
+
+	networkOpt := runtime.WithNetwork(network)
+	customBackend, err := runtime.NewGardenBackend(
+		libcontainerd.New(
+			s.containerdSocket(),
+			namespace,
+			requestTimeout,
+		),
+		networkOpt,
+	)
+	s.NoError(err)
+
+	s.NoError(customBackend.Start())
+
+	handle := uuid()
+
+	container, err := customBackend.Create(garden.ContainerSpec{
+		Handle:     handle,
+		RootFSPath: "raw://" + s.rootfs,
+		Privileged: true,
+	})
+	s.NoError(err)
+
+	defer func() {
+		s.NoError(customBackend.Destroy(handle))
+		customBackend.Stop()
+	}()
+
+	buf := new(buffer)
+	proc, err := container.Run(
+		garden.ProcessSpec{
+			Path: "/executable",
+			Args: []string{
+				"-cat=/etc/hosts",
+			},
+		},
+		garden.ProcessIO{
+			Stdout: buf,
+			Stderr: buf,
+		},
+	)
+	s.NoError(err)
+
+	exitCode, err := proc.Wait()
+	s.NoError(err)
+
+	fmt.Println(buf.String())
+
+	s.Equal(exitCode, 0)
+	s.Contains(buf.String(), handle)
+}
+
 // TestRunPrivileged tests whether we're able to run a process in a privileged
 // container.
 //
