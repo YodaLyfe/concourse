@@ -102,8 +102,8 @@ func (factory *stepperFactory) buildStep(build db.Build, plan atc.Plan) exec.Ste
 		return factory.buildTimeoutStep(build, plan)
 	}
 
-	if plan.Try != nil {
-		return factory.buildTryStep(build, plan)
+	if plan.DoNot != nil {
+		return factory.buildDoNotStep(build, plan)
 	}
 
 	if plan.OnAbort != nil {
@@ -222,8 +222,8 @@ func (factory *stepperFactory) buildTimeoutStep(build db.Build, plan atc.Plan) e
 	return exec.Timeout(step, plan.Timeout.Duration)
 }
 
-func (factory *stepperFactory) buildTryStep(build db.Build, plan atc.Plan) exec.Step {
-	innerPlan := plan.Try.Step
+func (factory *stepperFactory) buildDoNotStep(build db.Build, plan atc.Plan) exec.Step {
+	innerPlan := plan.DoNot.Step
 	innerPlan.Attempts = plan.Attempts
 	step := factory.buildStep(build, innerPlan)
 	return exec.Try(step)

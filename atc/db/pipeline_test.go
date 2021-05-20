@@ -2134,7 +2134,7 @@ var _ = Describe("Pipeline", func() {
 				By("setting the build ID to a high number")
 				pipeline.SetParentIDs(1, 60)
 
-				By("trying to set the build ID to a lower number")
+				By("do_noting to set the build ID to a lower number")
 				err := pipeline.SetParentIDs(1, 2)
 				Expect(err).To(MatchError(db.ErrSetByNewerBuild))
 			})

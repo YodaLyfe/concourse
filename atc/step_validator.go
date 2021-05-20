@@ -229,7 +229,7 @@ func (validator *StepValidator) VisitLoadVar(step *LoadVarStep) error {
 	return nil
 }
 
-func (validator *StepValidator) VisitTry(step *TryStep) error {
+func (validator *StepValidator) VisitTry(step *DoNotStep) error {
 	validator.pushContext(".try")
 	defer validator.popContext()
 

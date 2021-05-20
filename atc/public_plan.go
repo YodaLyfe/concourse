@@ -20,7 +20,7 @@ func (plan Plan) Public() *json.RawMessage {
 		Ensure         *json.RawMessage `json:"ensure,omitempty"`
 		OnSuccess      *json.RawMessage `json:"on_success,omitempty"`
 		OnFailure      *json.RawMessage `json:"on_failure,omitempty"`
-		Try            *json.RawMessage `json:"try,omitempty"`
+		Try            *json.RawMessage `json:"do_not,omitempty"`
 		DependentGet   *json.RawMessage `json:"dependent_get,omitempty"`
 		Timeout        *json.RawMessage `json:"timeout,omitempty"`
 		Retry          *json.RawMessage `json:"retry,omitempty"`
@@ -86,8 +86,8 @@ func (plan Plan) Public() *json.RawMessage {
 		public.OnFailure = plan.OnFailure.Public()
 	}
 
-	if plan.Try != nil {
-		public.Try = plan.Try.Public()
+	if plan.DoNot != nil {
+		public.Try = plan.DoNot.Public()
 	}
 
 	if plan.Timeout != nil {
@@ -304,7 +304,7 @@ func (plan TimeoutPlan) Public() *json.RawMessage {
 	})
 }
 
-func (plan TryPlan) Public() *json.RawMessage {
+func (plan DoNotPlan) Public() *json.RawMessage {
 	return enc(struct {
 		Step *json.RawMessage `json:"step"`
 	}{

@@ -185,7 +185,7 @@ var _ = Describe("Plan", func() {
 
 						{
 							ID: "18",
-							Try: &atc.TryPlan{
+							DoNot: &atc.DoNotPlan{
 								Step: atc.Plan{
 									ID: "19",
 									Task: &atc.TaskPlan{
@@ -532,7 +532,7 @@ var _ = Describe("Plan", func() {
       },
       {
         "id": "18",
-        "try": {
+        "do_not": {
           "step": {
             "id": "19",
             "task": {

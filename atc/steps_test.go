@@ -202,15 +202,15 @@ var factoryTests = []StepTest{
 		},
 	},
 	{
-		Title: "try step",
+		Title: "do_not step",
 
 		ConfigYAML: `
-			try:
+			do_not:
 			  load_var: some-var
 			  file: some-file
 		`,
 
-		StepConfig: &atc.TryStep{
+		StepConfig: &atc.DoNotStep{
 			Step: atc.Step{
 				Config: &atc.LoadVarStep{
 					Name: "some-var",

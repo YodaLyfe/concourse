@@ -132,7 +132,7 @@ func (s *buildStarter) tryStartNextPendingBuild(
 	nextPendingBuild Build,
 	job db.SchedulerJob,
 ) (startResults, error) {
-	logger = logger.Session("try-start-next-pending-build", lager.Data{
+	logger = logger.Session("do_not-start-next-pending-build", lager.Data{
 		"build-id":   nextPendingBuild.ID(),
 		"build-name": nextPendingBuild.Name(),
 	})

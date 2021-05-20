@@ -639,8 +639,8 @@ decodeBuildPlan =
                     lazy (\_ -> decodeBuildStepOnError)
                 , Json.Decode.field "ensure" <|
                     lazy (\_ -> decodeBuildStepEnsure)
-                , Json.Decode.field "try" <|
-                    lazy (\_ -> decodeBuildStepTry)
+                , Json.Decode.field "do_not" <|
+                    lazy (\_ -> decodeBuildStepDoNot)
                 , Json.Decode.field "retry" <|
                     lazy (\_ -> decodeBuildStepRetry)
                 , Json.Decode.field "timeout" <|
@@ -751,8 +751,8 @@ decodeBuildStepEnsure =
         )
 
 
-decodeBuildStepTry : Json.Decode.Decoder BuildStep
-decodeBuildStepTry =
+decodeBuildStepDoNot : Json.Decode.Decoder BuildStep
+decodeBuildStepDoNot =
     Json.Decode.succeed BuildStepTry
         |> andMap (Json.Decode.field "step" <| lazy (\_ -> decodeBuildPlan))
 

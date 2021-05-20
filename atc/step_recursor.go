@@ -70,7 +70,7 @@ func (recursor StepRecursor) VisitLoadVar(step *LoadVarStep) error {
 }
 
 // VisitTry recurses through to the wrapped step.
-func (recursor StepRecursor) VisitTry(step *TryStep) error {
+func (recursor StepRecursor) VisitTry(step *DoNotStep) error {
 	return step.Step.Config.Visit(recursor)
 }
 

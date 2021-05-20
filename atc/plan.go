@@ -21,7 +21,7 @@ type Plan struct {
 	OnError   *OnErrorPlan   `json:"on_error,omitempty"`
 	Ensure    *EnsurePlan    `json:"ensure,omitempty"`
 
-	Try     *TryPlan     `json:"try,omitempty"`
+	DoNot   *DoNotPlan     `json:"do_not,omitempty"`
 	Timeout *TimeoutPlan `json:"timeout,omitempty"`
 	Retry   *RetryPlan   `json:"retry,omitempty"`
 
@@ -82,8 +82,8 @@ func (plan *Plan) Each(f func(*Plan)) {
 		plan.Ensure.Next.Each(f)
 	}
 
-	if plan.Try != nil {
-		plan.Try.Step.Each(f)
+	if plan.DoNot != nil {
+		plan.DoNot.Step.Each(f)
 	}
 
 	if plan.Timeout != nil {
@@ -143,7 +143,7 @@ type TimeoutPlan struct {
 	Duration string `json:"duration"`
 }
 
-type TryPlan struct {
+type DoNotPlan struct {
 	Step Plan `json:"step"`
 }
 

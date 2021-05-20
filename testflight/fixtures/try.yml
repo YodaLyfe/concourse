@@ -1,8 +1,8 @@
 ---
 jobs:
-  - name: try-job
+  - name: do_not-job
     plan:
-      - try:
+      - do_not:
           task: failing-task
           config:
             platform: linux

@@ -178,7 +178,7 @@ type V5PlanConfig struct {
 	Failure    *V5PlanConfig       `json:"on_failure,omitempty"`
 	Ensure     *V5PlanConfig       `json:"ensure,omitempty"`
 	Success    *V5PlanConfig       `json:"on_success,omitempty"`
-	Try        *V5PlanConfig       `json:"try,omitempty"`
+	Try        *V5PlanConfig       `json:"do_not,omitempty"`
 	Version    *V5VersionConfig    `json:"version,omitempty"`
 }
 

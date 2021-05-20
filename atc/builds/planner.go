@@ -268,13 +268,13 @@ func (visitor *planVisitor) VisitLoadVar(step *atc.LoadVarStep) error {
 	return nil
 }
 
-func (visitor *planVisitor) VisitTry(step *atc.TryStep) error {
+func (visitor *planVisitor) VisitTry(step *atc.DoNotStep) error {
 	err := step.Step.Config.Visit(visitor)
 	if err != nil {
 		return err
 	}
 
-	visitor.plan = visitor.planFactory.NewPlan(atc.TryPlan{
+	visitor.plan = visitor.planFactory.NewPlan(atc.DoNotPlan{
 		Step: visitor.plan,
 	})
 

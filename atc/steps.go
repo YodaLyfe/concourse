@@ -193,7 +193,7 @@ type StepVisitor interface {
 	VisitPut(*PutStep) error
 	VisitSetPipeline(*SetPipelineStep) error
 	VisitLoadVar(*LoadVarStep) error
-	VisitTry(*TryStep) error
+	VisitTry(*DoNotStep) error
 	VisitDo(*DoStep) error
 	VisitInParallel(*InParallelStep) error
 	VisitAcross(*AcrossStep) error
@@ -274,8 +274,8 @@ var StepPrecedence = []StepDetector{
 		New: func() StepConfig { return &LoadVarStep{} },
 	},
 	{
-		Key: "try",
-		New: func() StepConfig { return &TryStep{} },
+		Key: "do_not",
+		New: func() StepConfig { return &DoNotStep{} },
 	},
 	{
 		Key: "do",
@@ -375,11 +375,11 @@ func (step *LoadVarStep) Visit(v StepVisitor) error {
 	return v.VisitLoadVar(step)
 }
 
-type TryStep struct {
-	Step Step `json:"try"`
+type DoNotStep struct {
+	Step Step `json:"do_not"`
 }
 
-func (step *TryStep) Visit(v StepVisitor) error {
+func (step *DoNotStep) Visit(v StepVisitor) error {
 	return v.VisitTry(step)
 }
 

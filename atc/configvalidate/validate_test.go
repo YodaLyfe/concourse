@@ -585,7 +585,7 @@ var _ = Describe("ValidateConfig", func() {
 						Type: "some-type",
 					},
 					{
-						Name: "try",
+						Name: "do_not",
 						Type: "some-type",
 					},
 					{
@@ -712,10 +712,10 @@ var _ = Describe("ValidateConfig", func() {
 								},
 							},
 							{
-								Config: &atc.TryStep{
+								Config: &atc.DoNotStep{
 									Step: atc.Step{
 										Config: &atc.GetStep{
-											Name: "try",
+											Name: "do_not",
 										},
 									},
 								},
@@ -1392,7 +1392,7 @@ var _ = Describe("ValidateConfig", func() {
 					}
 
 					job1.PlanSequence = append(job1.PlanSequence, atc.Step{
-						Config: &atc.TryStep{
+						Config: &atc.DoNotStep{
 							Step: atc.Step{
 								Config: &atc.PutStep{
 									Name: "some-resource",
@@ -1430,7 +1430,7 @@ var _ = Describe("ValidateConfig", func() {
 					}
 
 					job1.PlanSequence = append(job1.PlanSequence, atc.Step{
-						Config: &atc.TryStep{
+						Config: &atc.DoNotStep{
 							Step: atc.Step{
 								Config: &atc.GetStep{
 									Name: "some-resource",
@@ -1582,7 +1582,7 @@ var _ = Describe("ValidateConfig", func() {
 			Context("when a plan has an invalid step within a try", func() {
 				BeforeEach(func() {
 					job.PlanSequence = append(job.PlanSequence, atc.Step{
-						Config: &atc.TryStep{
+						Config: &atc.DoNotStep{
 							Step: atc.Step{
 								Config: &atc.PutStep{
 									Name:     "custom-name",

@@ -371,9 +371,9 @@ var factoryTests = []PlannerTest{
 		}`,
 	},
 	{
-		Title: "try step",
+		Title: "do_not step",
 
-		Config: &atc.TryStep{
+		Config: &atc.DoNotStep{
 			Step: atc.Step{
 				Config: &atc.LoadVarStep{
 					Name: "some-var",
@@ -384,7 +384,7 @@ var factoryTests = []PlannerTest{
 
 		PlanJSON: `{
 			"id": "(unique)",
-			"try": {
+			"do_not": {
 				"step": {
 					"id": "(unique)",
 					"load_var": {
